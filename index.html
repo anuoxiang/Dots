@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>.s</title>
+</head>
+<body>
+<canvas id="myCanvas" width="162" height="162"></canvas>
+<div>
+    <span id="xy"></span>
+    <span id="co"></span>
+</div>
+
+<input type="radio" name="ReadMode" id="ReadMode1"/><label for="ReadMode1">行读取</label><br>
+<input type="radio" name="ReadMode" id="ReadMode2" checked="checked"/><label for="ReadMode2">列读取</label><br>
+<input type="checkbox" name="trim" id="trim" checked="checked"/><label for="trim">去掉空内容</label><br>
+<textarea id="ArrayText"></textarea>
+<script type="text/javascript">
+    var paintR, paintC;                                     //最后绘制表格行列号
+    var MOUSEDOWN = false;                                  //全局，鼠标按下
+    var canvas = document.getElementById("myCanvas");       //画布
+    var ctx = canvas.getContext('2d');                      //2d
+    var _c_height, _c_width;                                //画布宽高
+    var _c_offsetLeft, _c_offsetTop;                        //画布坐标偏移量
+    _c_height = canvas.height;
+    _c_width = canvas.width;
+
+    _c_offsetLeft = canvas.offsetLeft;
+    _c_offsetTop = canvas.offsetTop;
+    var Cols = 8, Rows = 8;                                 //行列数
+    var boxSize = getWidth(Cols, Rows);                     //方块尺寸
+    var DoNotDoThis = false;                                //MouseUp的时候避免出发click方法
+
+    function toHexString(r, g, b) {
+        return ("00000" + (r << 16 | g << 8 | b).toString(16)).slice(-6);
+    }
+
+    //绘制网格
+    function getWidth(rows, cols) {
+        var mh = parseInt(_c_height / rows);
+        var mw = parseInt(_c_width / cols);
+        var b = mh > mw ? mw : mh;
+        return b;
+    }
+
+    function drawGrid(rows, cols) {
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "black";
+
+        for (var r = 0; r <= rows; r++) {
+            ctx.moveTo(0, r * boxSize);
+            ctx.lineTo(cols * boxSize, r * boxSize);
+        }
+
+        for (var c = 0; c <= cols; c++) {
+            ctx.moveTo(c * boxSize, 0);
+            ctx.lineTo(c * boxSize, rows * boxSize);
+        }
+
+        ctx.moveTo(cols * boxSize, 0);
+        ctx.lineTo(cols * boxSize, rows * boxSize);
+        ctx.lineTo(0, rows * boxSize);
+        ctx.stroke();
+    }
+
+    function drawBox(x, y) {
+        if (MOUSEDOWN && paintR == parseInt(y / boxSize) && paintC == parseInt(x / boxSize)) return;
+        paintR = parseInt(y / boxSize);
+        paintC = parseInt(x / boxSize);
+
+        if (!Read(paintR, paintC))
+            ctx.fillStyle = "#000000";
+        else
+            ctx.fillStyle = "#ffffff";
+        ctx.fillRect((parseInt(x / boxSize)) * boxSize + 1, (parseInt(y / boxSize)) * boxSize + 1, boxSize - 1, boxSize - 1);
+        ToArray(Rows, Cols);
+    }
+
+    function mousemove(e) {
+        if (MOUSEDOWN) {
+            drawBox(e.clientX - _c_offsetLeft, e.clientY - _c_offsetTop);
+        }
+        else {
+            paintR = paintC = 0;
+        }
+    }
+
+    function mouseup(e) {
+        drawBox(e.clientX - _c_offsetLeft, e.clientY - _c_offsetTop);
+        MOUSEDOWN = false;
+    }
+
+    function mousedown(e) {
+        MOUSEDOWN = true;
+    }
+
+    function ToArray(rows, cols) {
+        //读取模式
+        var LineMode = document.getElementById("ReadMode1").checked;
+        //是否去空
+        var Trim = document.getElementById("trim").checked;
+
+        var arr = [];
+        var _r = LineMode ? rows : cols;
+        var _c = LineMode ? cols : rows;
+        for (var r = 0; r < _r; r++) {
+            var m = 0;
+            for (var c = 0; c < _c; c++) {
+                m = m << 1;
+                if (LineMode)
+                    m += Read(r, c) ? 1 : 0;
+                else
+                    m += Read(c, r) ? 1 : 0;
+            }
+            arr.push("0x" + m.toString(16));
+        }
+
+        if (Trim) {
+            while (1) {
+                if (arr.length == 0 || arr[0] != "0x0")
+                    break;
+                else
+                    arr = arr.slice(1);
+            }
+            while (1) {
+                if (arr.length == 0 || arr[arr.length - 1] != "0x0")
+                    break;
+                else
+                    arr = arr.slice(0, arr.length - 1);
+            }
+        }
+
+        var text = document.getElementById("ArrayText");
+        text.value = "uint8_t v[" + arr.length + "] = {" + arr.join(",") + "};";
+    }
+
+    //是否黑色
+    function Read(row, col) {
+        var color = ctx.getImageData(col * boxSize + boxSize / 2, row * boxSize + boxSize / 2, 1, 1);
+        return color.data[0] == 0;
+    }
+
+    //绑定事件
+    //canvas.addEventListener("click", click, false);
+    canvas.addEventListener("mousemove", mousemove, false);
+    document.addEventListener("mousedown", mousedown);
+    document.addEventListener("mouseup", mouseup);
+
+    //画框
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, _c_width, _c_height);
+    drawGrid(Rows, Cols);
+</script>
+</body>
+</html>
