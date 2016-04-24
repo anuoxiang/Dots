@@ -14,6 +14,7 @@
 <input type="radio" name="ReadMode" id="ReadMode1"/><label for="ReadMode1">行读取</label><br>
 <input type="radio" name="ReadMode" id="ReadMode2" checked="checked"/><label for="ReadMode2">列读取</label><br>
 <input type="checkbox" name="trim" id="trim" checked="checked"/><label for="trim">去掉空内容</label><br>
+<input type="button" name="reset" id="reset" value="复位" /><br>
 <textarea id="ArrayText"></textarea>
 <script type="text/javascript">
     var paintR, paintC;                                     //最后绘制表格行列号
@@ -62,6 +63,7 @@
         ctx.lineTo(cols * boxSize, rows * boxSize);
         ctx.lineTo(0, rows * boxSize);
         ctx.stroke();
+        ctx.closePath();
     }
 
     function drawBox(x, y) {
@@ -82,7 +84,7 @@
             drawBox(e.clientX - _c_offsetLeft, e.clientY - _c_offsetTop);
         }
         else {
-            paintR = paintC = 0;
+            paintR = paintC = -1;
         }
     }
 
@@ -141,16 +143,30 @@
         return color.data[0] == 0;
     }
 
+    function Reset(){
+        //画框
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, _c_width, _c_height);
+        drawGrid(Rows, Cols);
+        document.getElementById("ArrayText").value = "";
+    }
+
     //绑定事件
     //canvas.addEventListener("click", click, false);
     canvas.addEventListener("mousemove", mousemove, false);
     document.addEventListener("mousedown", mousedown);
     document.addEventListener("mouseup", mouseup);
 
-    //画框
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, _c_width, _c_height);
-    drawGrid(Rows, Cols);
+    document.getElementById("reset").addEventListener("click",Reset);
+    Reset();
+    /*
+    ctx.beginPath();
+    ctx.moveTo(10,0);
+    ctx.fillStyle="#ffffff";
+    ctx.lineWidth = 1;
+    ctx.lineTo(30,0);
+    ctx.stroke();
+*/
 </script>
 </body>
 </html>
